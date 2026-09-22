@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ZTNA Security Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='dashboard.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <h2>ZTNA</h2>
+            <p>Security Dashboard</p>
+        </div>
+
+        <nav>
+
+            <a
+                href="{{ url_for('overview') }}"
+                class="{{ 'active' if page == 'overview' else '' }}"
+            >
+                Overview
+            </a>
+
+            <a
+                href="{{ url_for('access') }}"
+                class="{{ 'active' if page == 'access' else '' }}"
+            >
+                Access
+            </a>
+
+            <a
+                href="{{ url_for('history') }}"
+                class="{{ 'active' if page == 'history' else '' }}"
+            >
+                Access History
+            </a>
+
+            <a
+                href="{{ url_for('devices') }}"
+                class="{{ 'active' if page == 'devices' else '' }}"
+            >
+                Devices
+            </a>
+
+            <a
+                href="{{ url_for('threats') }}"
+                class="{{ 'active' if page == 'threats' else '' }}"
+            >
+                Threats
+            </a>
+
+            <a
+                href="{{ url_for('alerts') }}"
+                class="{{ 'active' if page == 'alerts' else '' }}"
+            >
+                Security Alerts
+            </a>
+
+            <a
+                href="{{ url_for('incidents') }}"
+                class="{{ 'active' if page == 'incidents' else '' }}"
+            >
+                Incidents
+            </a>
+
+            <a
+                href="{{ url_for('admin') }}"
+                class="{{ 'active' if page == 'admin' else '' }}"
+            >
+                Admin
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div>
+                <h1>Zero Trust Network Access</h1>
+                <p>
+                    Identity, Device Trust, Access Control
+                    and Threat Monitoring
+                </p>
+            </div>
+
+            <div class="status">
+                SYSTEM ONLINE
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             FLASH MESSAGES
+             ================================================= -->
+
+        {% with messages = get_flashed_messages() %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="flash-message">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- =================================================
+             OVERVIEW
+             ================================================= -->
+
+        {% if page == "overview" %}
+
+        <section>
+
+            <div class="section-title">
+                <h2>Security Overview</h2>
+
+                <p>
+                    Current Zero Trust security posture
+                </p>
+            </div>
+
+
+            <div class="cards">
+
+                <div class="card">
+
+                    <span>
+                        Trusted Devices
+                    </span>
+
+                    <strong>
+                        {{ trusted_devices }}
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span>
+                        Active Sessions
+                    </span>
+
+                    <strong>
+                        {{ active_sessions }}
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span>
+                        Attacks Today
+                    </span>
+
+                    <strong>
+                        {{ attacks_today }}
+                    </strong>
+
+                </div>
+
+
+                <div class="card warning-card">
+
+                    <span>
+                        Open Security Alerts
+                    </span>
+
+                    <strong>
+                        {{ open_alerts }}
+                    </strong>
+
+                </div>
+
+
+                <div class="card danger-card">
+
+                    <span>
+                        Locked Accounts
+                    </span>
+
+                    <strong>
+                        {{ locked_accounts }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACCESS DECISIONS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Current Access Decisions
+                    </h3>
+
+                    <a href="{{ url_for('access') }}">
+                        View All
+                    </a>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Device</th>
+                            <th>Trust</th>
+                            <th>Risk</th>
+                            <th>Decision</th>
+                            <th>Reason</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for row in access_states %}
+
+                        <tr>
+
+                            <td>
+                                {{ row.username }}
+                            </td>
+
+                            <td>
+                                {{ row.role }}
+                            </td>
+
+                            <td>
+                                {{ row.device_name or "-" }}
+                            </td>
+
+                            <td>
+                                {{ row.trust_score }}
+                            </td>
+
+                            <td>
+                                {{ row.risk_score }}
+                            </td>
+
+                            <td>
+
+                                {% if row.decision == "ALLOW" %}
+
+                                <span class="badge allow">
+                                    ALLOW
+                                </span>
+
+                                {% elif row.decision == "LIMITED" %}
+
+                                <span class="badge limited">
+                                    LIMITED
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    BLOCK
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ row.reason or "-" }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="7">
+                                No access-state records.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- LATEST ATTACK -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Latest Detected Threat
+                    </h3>
+
+                    <a href="{{ url_for('threats') }}">
+                        View Threats
+                    </a>
+
+                </div>
+
+
+                {% if latest_attack %}
+
+                <div class="attack-summary">
+
+                    <div>
+
+                        <span>Attack</span>
+
+                        <strong>
+                            {{ latest_attack.attack_type }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>Source</span>
+
+                        <strong>
+                            {{ latest_attack.source_ip }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>Target</span>
+
+                        <strong>
+                            {{ latest_attack.destination_ip }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>Risk</span>
+
+                        <strong>
+                            {{ latest_attack.risk_score }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>Severity</span>
+
+                        {% if latest_attack.threat_level == "Critical" %}
+
+                            <span class="severity severity-critical">
+                                CRITICAL
+                            </span>
+
+                        {% elif latest_attack.threat_level == "High" %}
+
+                            <span class="severity severity-high">
+                                HIGH
+                            </span>
+
+                        {% elif latest_attack.threat_level == "Medium" %}
+
+                            <span class="severity severity-medium">
+                                MEDIUM
+                            </span>
+
+                        {% else %}
+
+                            <span class="severity severity-low">
+                                {{ latest_attack.threat_level }}
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                {% else %}
+
+                <p class="empty-message">
+                    No detected threats.
+                </p>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- RECENT THREATS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Recent Threats
+                    </h3>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>Attack</th>
+                            <th>Source</th>
+                            <th>Target</th>
+                            <th>Risk</th>
+                            <th>Severity</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for attack in recent_attacks %}
+
+                        <tr>
+
+                            <td>
+                                {{ attack.timestamp }}
+                            </td>
+
+                            <td>
+                                {{ attack.attack_type }}
+                            </td>
+
+                            <td>
+                                {{ attack.source_ip }}
+                            </td>
+
+                            <td>
+                                {{ attack.destination_ip }}
+                            </td>
+
+                            <td>
+                                {{ attack.risk_score }}
+                            </td>
+
+                            <td>
+
+                                {% if attack.threat_level == "Critical" %}
+
+                                    <span class="severity severity-critical">
+                                        CRITICAL
+                                    </span>
+
+                                {% elif attack.threat_level == "High" %}
+
+                                    <span class="severity severity-high">
+                                        HIGH
+                                    </span>
+
+                                {% elif attack.threat_level == "Medium" %}
+
+                                    <span class="severity severity-medium">
+                                        MEDIUM
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="severity severity-low">
+                                        {{ attack.threat_level }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="6">
+                                No threat records.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- RECENT ACCESS HISTORY -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Recent Access History
+                    </h3>
+
+                    <a href="{{ url_for('history') }}">
+                        View All
+                    </a>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Resource</th>
+                            <th>Action</th>
+                            <th>Result</th>
+                            <th>Reason</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for item in recent_history %}
+
+                        <tr>
+
+                            <td>
+                                {{ item.timestamp }}
+                            </td>
+
+                            <td>
+                                {{ item.username or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.resource or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.action or "-" }}
+                            </td>
+
+                            <td>
+
+                                {% if item.result == "ALLOW" %}
+
+                                <span class="badge allow">
+                                    ALLOW
+                                </span>
+
+                                {% elif item.result == "LIMITED" %}
+
+                                <span class="badge limited">
+                                    LIMITED
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    {{ item.result }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ item.reason or "-" }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="6">
+                                No access history yet.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- RECENT ALERTS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Recent Security Alerts
+                    </h3>
+
+                    <a href="{{ url_for('alerts') }}">
+                        View All
+                    </a>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Alert</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for alert in recent_alerts %}
+
+                        <tr>
+
+                            <td>
+                                {{ alert.created_at }}
+                            </td>
+
+                            <td>
+                                {{ alert.username or "-" }}
+                            </td>
+
+                            <td>
+                                {{ alert.alert_type }}
+                            </td>
+
+                            <td>
+                                {{ alert.severity }}
+                            </td>
+
+                            <td>
+                                {{ alert.status }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="5">
+                                No security alerts.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- INCIDENT TIMELINE -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Incident Timeline
+                    </h3>
+
+                    <a href="{{ url_for('incidents') }}">
+                        View All
+                    </a>
+
+                </div>
+
+
+                <div class="timeline">
+
+                    {% for event in timeline %}
+
+                    <div class="timeline-item">
+
+                        <strong>
+                            {{ event.event_type }}
+                        </strong>
+
+                        <span>
+                            {{ event.timestamp }}
+                        </span>
+
+                        <p>
+                            {{ event.description }}
+                        </p>
+
+                    </div>
+
+                    {% else %}
+
+                    <p class="empty-message">
+                        No incident timeline records.
+                    </p>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ACCESS
+             ================================================= -->
+
+        {% elif page == "access" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Zero Trust Access
+                </h2>
+
+                <p>
+                    Current trust, risk and access decisions
+                </p>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Device</th>
+                            <th>Trust</th>
+                            <th>Risk</th>
+                            <th>Decision</th>
+                            <th>Step-Up</th>
+                            <th>Reason</th>
+                            <th>Updated</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for row in access_states %}
+
+                        <tr>
+
+                            <td>
+                                {{ row.username }}
+                            </td>
+
+                            <td>
+                                {{ row.role }}
+                            </td>
+
+                            <td>
+                                {{ row.device_name or "-" }}
+                            </td>
+
+                            <td>
+                                {{ row.trust_score }}
+                            </td>
+
+                            <td>
+                                {{ row.risk_score }}
+                            </td>
+
+                            <td>
+
+                                {% if row.decision == "ALLOW" %}
+
+                                <span class="badge allow">
+                                    ALLOW
+                                </span>
+
+                                {% elif row.decision == "LIMITED" %}
+
+                                <span class="badge limited">
+                                    LIMITED
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    BLOCK
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ "YES" if row.step_up_required else "NO" }}
+                            </td>
+
+                            <td>
+                                {{ row.reason or "-" }}
+                            </td>
+
+                            <td>
+                                {{ row.updated_at }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="9">
+                                No access records.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ACCESS HISTORY
+             ================================================= -->
+
+        {% elif page == "history" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Access History
+                </h2>
+
+                <p>
+                    Audit trail of protected-resource
+                    access decisions
+                </p>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Source IP</th>
+                            <th>Resource</th>
+                            <th>Action</th>
+                            <th>Result</th>
+                            <th>Reason</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for item in access_history %}
+
+                        <tr>
+
+                            <td>
+                                {{ item.timestamp }}
+                            </td>
+
+                            <td>
+                                {{ item.username or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.role or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.device_ip or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.resource or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.action or "-" }}
+                            </td>
+
+                            <td>
+
+                                {% if item.result == "ALLOW" %}
+
+                                <span class="badge allow">
+                                    ALLOW
+                                </span>
+
+                                {% elif item.result == "LIMITED" %}
+
+                                <span class="badge limited">
+                                    LIMITED
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    {{ item.result }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ item.reason or "-" }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="8">
+                                No access history records.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             DEVICES
+             ================================================= -->
+
+        {% elif page == "devices" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Device Certificates
+                </h2>
+
+                <p>
+                    Certificate-based device trust
+                </p>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>User</th>
+                            <th>Device</th>
+                            <th>Certificate CN</th>
+                            <th>Serial</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Revoked</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for cert in certificates %}
+
+                        <tr>
+
+                            <td>
+                                {{ cert.username }}
+                            </td>
+
+                            <td>
+                                {{ cert.device_name or "-" }}
+                            </td>
+
+                            <td>
+                                {{ cert.certificate_cn }}
+                            </td>
+
+                            <td class="mono">
+                                {{ cert.certificate_serial or "-" }}
+                            </td>
+
+                            <td>
+
+                                {% if cert.status == "ACTIVE" %}
+
+                                <span class="badge allow">
+                                    ACTIVE
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    {{ cert.status }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ cert.created_at }}
+                            </td>
+
+                            <td>
+                                {{ cert.revoked_at or "-" }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="7">
+                                No device certificates.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             THREATS
+             ================================================= -->
+
+        {% elif page == "threats" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Threat Monitoring
+                </h2>
+
+                <p>
+                    Network attack detection and
+                    risk classification
+                </p>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>Attack</th>
+                            <th>Source</th>
+                            <th>Target</th>
+                            <th>Protocol</th>
+                            <th>Risk</th>
+                            <th>Severity</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for attack in attacks %}
+
+                        <tr>
+
+                            <td>
+                                {{ attack.timestamp }}
+                            </td>
+
+                            <td>
+                                {{ attack.attack_type }}
+                            </td>
+
+                            <td>
+                                {{ attack.source_ip }}
+                            </td>
+
+                            <td>
+                                {{ attack.destination_ip }}
+                            </td>
+
+                            <td>
+                                {{ attack.protocol }}
+                            </td>
+
+                            <td>
+                                {{ attack.risk_score }}
+                            </td>
+
+                            <td>
+
+                                {% if attack.threat_level == "Critical" %}
+
+                                    <span class="severity severity-critical">
+                                        CRITICAL
+                                    </span>
+
+                                {% elif attack.threat_level == "High" %}
+
+                                    <span class="severity severity-high">
+                                        HIGH
+                                    </span>
+
+                                {% elif attack.threat_level == "Medium" %}
+
+                                    <span class="severity severity-medium">
+                                        MEDIUM
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="severity severity-low">
+                                        {{ attack.threat_level }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="7">
+                                No detected threats.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SECURITY ALERTS
+             ================================================= -->
+
+        {% elif page == "alerts" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Security Alerts
+                </h2>
+
+                <p>
+                    Authentication and security events
+                    requiring administrator attention
+                </p>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Source IP</th>
+                            <th>Alert</th>
+                            <th>Severity</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Resolved By</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for alert in security_alerts %}
+
+                        <tr>
+
+                            <td>
+                                {{ alert.created_at }}
+                            </td>
+
+                            <td>
+                                {{ alert.username or "-" }}
+                            </td>
+
+                            <td>
+                                {{ alert.source_ip or "-" }}
+                            </td>
+
+                            <td>
+                                {{ alert.alert_type }}
+                            </td>
+
+                            <td>
+                                {{ alert.severity }}
+                            </td>
+
+                            <td>
+                                {{ alert.description }}
+                            </td>
+
+                            <td>
+
+                                {% if alert.status == "OPEN" %}
+
+                                <span class="badge limited">
+                                    OPEN
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge allow">
+                                    {{ alert.status }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ alert.resolved_by or "-" }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="8">
+                                No security alerts.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             INCIDENTS
+             ================================================= -->
+
+        {% elif page == "incidents" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Incident Timeline
+                </h2>
+
+                <p>
+                    Security and administrator actions
+                </p>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="timeline">
+
+                    {% for event in timeline %}
+
+                    <div class="timeline-item">
+
+                        <strong>
+                            {{ event.event_type }}
+                        </strong>
+
+                        <span>
+                            {{ event.timestamp }}
+                        </span>
+
+                        <p>
+                            {{ event.description }}
+                        </p>
+
+                        {% if event.username %}
+
+                        <small>
+                            User: {{ event.username }}
+                        </small>
+
+                        {% endif %}
+
+                    </div>
+
+                    {% else %}
+
+                    <p class="empty-message">
+                        No incident records.
+                    </p>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Enforcement Events
+                    </h3>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>Device IP</th>
+                            <th>Action</th>
+                            <th>Destination</th>
+                            <th>Port</th>
+                            <th>Reason</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for item in enforcement %}
+
+                        <tr>
+
+                            <td>
+                                {{ item.timestamp }}
+                            </td>
+
+                            <td>
+                                {{ item.device_ip or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.action or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.destination_ip or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.destination_port or "-" }}
+                            </td>
+
+                            <td>
+                                {{ item.reason or "-" }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="6">
+                                No enforcement records.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ADMIN
+             ================================================= -->
+
+        {% elif page == "admin" %}
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Administrator Security Actions
+                </h2>
+
+                <p>
+                    Session, account and certificate
+                    response controls
+                </p>
+
+            </div>
+
+
+            <!-- BLOCKED USERS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Locked Accounts
+                    </h3>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Device IP</th>
+                            <th>Failed Attempts</th>
+                            <th>Status</th>
+                            <th>Locked Until</th>
+                            <th>Action</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for user in blocked_users %}
+
+                        <tr>
+
+                            <td>
+                                {{ user.username }}
+                            </td>
+
+                            <td>
+                                {{ user.role }}
+                            </td>
+
+                            <td>
+                                {{ user.device_ip or "-" }}
+                            </td>
+
+                            <td>
+                                {{ user.failed_attempts }}
+                            </td>
+
+                            <td>
+
+                                <span class="badge block">
+                                    {{ user.account_status }}
+                                </span>
+
+                            </td>
+
+                            <td>
+                                {{ user.locked_until or "-" }}
+                            </td>
+
+                            <td>
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'unlock_user',
+                                        user_id=user.id
+                                    ) }}"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-warning"
+                                    >
+                                        Unlock User
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="7">
+                                No locked accounts.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- OPEN ALERTS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Open Security Alerts
+                    </h3>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Source IP</th>
+                            <th>Alert</th>
+                            <th>Severity</th>
+                            <th>Description</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for alert in admin_alerts %}
+
+                        <tr>
+
+                            <td>
+                                {{ alert.created_at }}
+                            </td>
+
+                            <td>
+                                {{ alert.username or "-" }}
+                            </td>
+
+                            <td>
+                                {{ alert.source_ip or "-" }}
+                            </td>
+
+                            <td>
+                                {{ alert.alert_type }}
+                            </td>
+
+                            <td>
+                                {{ alert.severity }}
+                            </td>
+
+                            <td>
+                                {{ alert.description }}
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="6">
+                                No open security alerts.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- SESSIONS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Access Sessions
+                    </h3>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>User</th>
+                            <th>Device IP</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Last Seen</th>
+                            <th>Revoked</th>
+                            <th>Action</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for session in sessions %}
+
+                        <tr>
+
+                            <td>
+                                {{ session.username }}
+                            </td>
+
+                            <td>
+                                {{ session.device_ip or "-" }}
+                            </td>
+
+                            <td>
+
+                                {% if session.status == "ACTIVE" %}
+
+                                <span class="badge allow">
+                                    ACTIVE
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    {{ session.status }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ session.created_at }}
+                            </td>
+
+                            <td>
+                                {{ session.last_seen }}
+                            </td>
+
+                            <td>
+                                {{ session.revoked_at or "-" }}
+                            </td>
+
+                            <td>
+
+                                {% if session.username == admin_user.username %}
+
+                                    <span class="muted">
+                                        Current Admin
+                                    </span>
+
+                                {% elif session.status == "ACTIVE" %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'revoke_session',
+                                        session_db_id=session.id
+                                    ) }}"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-danger"
+                                    >
+                                        Revoke Session
+                                    </button>
+
+                                </form>
+
+                                {% else %}
+
+                                    <span class="muted">
+                                        -
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="7">
+                                No sessions.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- CERTIFICATES -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Device Certificates
+                    </h3>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>User</th>
+                            <th>Device</th>
+                            <th>Certificate CN</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Revoked</th>
+                            <th>Action</th>
+                        </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for cert in certificates %}
+
+                        <tr>
+
+                            <td>
+                                {{ cert.username }}
+                            </td>
+
+                            <td>
+                                {{ cert.device_name or "-" }}
+                            </td>
+
+                            <td>
+                                {{ cert.certificate_cn }}
+                            </td>
+
+                            <td>
+
+                                {% if cert.status == "ACTIVE" %}
+
+                                <span class="badge allow">
+                                    ACTIVE
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge block">
+                                    {{ cert.status }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ cert.created_at }}
+                            </td>
+
+                            <td>
+                                {{ cert.revoked_at or "-" }}
+                            </td>
+
+                            <td>
+
+                                {% if cert.username == admin_user.username %}
+
+                                    <span class="muted">
+                                        Current Admin
+                                    </span>
+
+                                {% elif cert.status == "ACTIVE" %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'revoke_certificate',
+                                        certificate_id=cert.id
+                                    ) }}"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-danger"
+                                    >
+                                        Revoke Certificate
+                                    </button>
+
+                                </form>
+
+                                {% else %}
+
+                                    <span class="muted">
+                                        -
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="7">
+                                No certificates.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        {% endif %}
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

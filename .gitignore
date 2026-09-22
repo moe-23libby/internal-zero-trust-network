@@ -1,0 +1,58 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Python environments
+venv/
+.venv/
+env/
+
+# Environment / secrets
+.env
+.env.*
+*.secret
+
+# Private certificates and keys
+*.key
+*.p12
+*.pfx
+*.pem
+
+# Certificate private material
+certs/ca/*.key
+certs/clients/*.key
+certs/clients/*.p12
+certs/server/*.key
+
+# Database files / dumps
+*.sql.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Packet captures
+*.pcap
+*.pcapng
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Backup project files
+*_backup.py
+*.backup
+*.bak
+
+# Temporary files
+*.tmp
+*~
+
+# Editor swap files
+*.swp
+*.swo
