@@ -56,3 +56,4 @@ logs/
 # Editor swap files
 *.swp
 *.swo
+*.save
