@@ -12,6 +12,7 @@ env/
 .env
 .env.*
 *.secret
+*.save
 
 # Private certificates and keys
 *.key
@@ -56,4 +57,5 @@ logs/
 # Editor swap files
 *.swp
 *.swo
+*.save
 *.save
